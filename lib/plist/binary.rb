@@ -10,56 +10,37 @@ module Plist
     def self.binary_plist(obj)
       encoded_objs = flatten_collection(obj)
       ref_byte_size = min_byte_size(encoded_objs.length - 1)
-      encoded_objs.collect! {|o| binary_plist_obj(o, ref_byte_size)}
-      # Write header and encoded objects.
-      plist = "bplist00" + encoded_objs.join
+      # Write header
+      header = "bplist00"
+      plist = StringIO.new
+      plist << header
       # Write offset table.
-      offset_table_addr = plist.length
       offset = 8
       offset_table = []
+      offset_string = ""
+      encoded_length = 0
       encoded_objs.each do |o|
+        obj = binary_plist_obj(o, ref_byte_size)
+        plist << obj
+        encoded_length += obj.length
         offset_table << offset
-        offset += o.length
+        offset += obj.length
       end
+      offset_table_addr = header.size + encoded_length
       offset_byte_size = min_byte_size(offset)
       offset_table.each do |offset|
-        plist += pack_int(offset, offset_byte_size)
+        plist << pack_int(offset, offset_byte_size)
       end
       # Write trailer.
-      plist += "\0\0\0\0\0\0" # Six unused bytes
-      plist += [
+      plist << "\0\0\0\0\0\0" # Six unused bytes
+      plist << [
         offset_byte_size,
         ref_byte_size,
         encoded_objs.length >> 32, encoded_objs.length & 0xffffffff,
         0, 0, # Index of root object
         offset_table_addr >> 32, offset_table_addr & 0xffffffff
       ].pack("CCNNNNNN")
-      plist
-    end
-    
-    def self.decode_binary_plist(plist)
-      # Check header.
-      unless plist[0, 6] == "bplist"
-        raise ArgumentError, "argument is not a binary property list"
-      end
-      version = plist[6, 2]
-      unless version == "00"
-        raise ArgumentError,
-          "don't know how to decode format version #{version}"
-      end
-      # Read trailer.
-      trailer = plist[-26, 26].unpack("CCNNNNNN")
-      offset_byte_size    = trailer[0]
-      ref_byte_size       = trailer[1]
-      encoded_objs_length = combine_ints(32, trailer[2], trailer[3])
-      root_index          = combine_ints(32, trailer[4], trailer[5])
-      offset_table_addr   = combine_ints(32, trailer[6], trailer[7])
-      # Decode objects.
-      root_offset = offset_for_index(plist, offset_table_addr,
-        offset_byte_size, root_index)
-      root_obj = decode_binary_plist_obj(plist, root_offset, ref_byte_size)
-      unflatten_collection(root_obj, [root_obj], plist, offset_table_addr,
-        offset_byte_size, ref_byte_size)
+      plist.string
     end
     
   private
@@ -147,48 +128,6 @@ module Plist
         end
         return obj_list
       end
-    end
-    
-    def self.unflatten_collection(collection, obj_list, plist,
-      offset_table_addr, offset_byte_size, ref_byte_size)
-      case collection
-      when Array, Set
-        collection.collect! do |index|
-          if obj = obj_list[index]
-            obj
-          else
-            offset = offset_for_index(plist, offset_table_addr, offset_byte_size,
-              index)
-            obj = decode_binary_plist_obj(plist, offset, ref_byte_size)
-            obj_list[index] = obj
-            unflatten_collection(obj, obj_list, plist, offset_table_addr,
-              offset_byte_size, ref_byte_size)
-          end
-        end
-      when Hash
-        hsh = {}
-        collection.each do |key, value|
-          unless key_obj = obj_list[key]
-            offset = offset_for_index(plist, offset_table_addr, offset_byte_size,
-              key)
-            key_obj = decode_binary_plist_obj(plist, offset, ref_byte_size)
-            obj_list[key] = key_obj
-            key_obj = unflatten_collection(key_obj, obj_list, plist,
-              offset_table_addr, offset_byte_size, ref_byte_size)
-          end
-          unless value_obj = obj_list[value]
-            offset = offset_for_index(plist, offset_table_addr, offset_byte_size,
-              value)
-            value_obj = decode_binary_plist_obj(plist, offset, ref_byte_size)
-            obj_list[value] = value_obj
-            value_obj = unflatten_collection(value_obj, obj_list, plist,
-              offset_table_addr, offset_byte_size, ref_byte_size)
-          end
-          hsh[key_obj] = value_obj
-        end
-        collection.replace(hsh)
-      end
-      return collection
     end
     
     # Returns a binary property list fragment that represents +obj+. The
@@ -290,87 +229,38 @@ module Plist
         return binary_plist_data(obj.read)
       when Array
         # Must be an array of object references as returned by flatten_collection.
-        result = (CFBinaryPlistMarkerArray | (obj.length < 15 ? obj.length : 0xf)).chr
-        result += binary_plist_obj(obj.length) if obj.length >= 15
-        result += obj.collect! { |i| pack_int(i, ref_byte_size) }.join
+        result = StringIO.new        
+        result << (CFBinaryPlistMarkerArray | (obj.length < 15 ? obj.length : 0xf)).chr
+        result << binary_plist_obj(obj.length) if obj.length >= 15
+        obj.each do |i|
+          result << pack_int(i, ref_byte_size)
+        end
+        result.string
       when Set
         # Must be a set of object references as returned by flatten_collection.
-        result = (CFBinaryPlistMarkerSet | (obj.length < 15 ? obj.length : 0xf)).chr
-        result += binary_plist_obj(obj.length) if obj.length >= 15
-        result += obj.to_a.collect! { |i| pack_int(i, ref_byte_size) }.join
+        result = StringIO.new
+        result << (CFBinaryPlistMarkerSet | (obj.length < 15 ? obj.length : 0xf)).chr
+        result << binary_plist_obj(obj.length) if obj.length >= 15
+        obj.to_a.each do |i|
+          result << pack_int(i, ref_byte_size)
+        end
+        result.string
       when Hash
         # Must be a table of object references as returned by flatten_collection.
-        result = (CFBinaryPlistMarkerDict | (obj.length < 15 ? obj.length : 0xf)).chr
-        result += binary_plist_obj(obj.length) if obj.length >= 15
-        result += obj.keys.collect! { |i| pack_int(i, ref_byte_size) }.join
-        result += obj.values.collect! { |i| pack_int(i, ref_byte_size) }.join
+        result = StringIO.new
+        result << (CFBinaryPlistMarkerDict | (obj.length < 15 ? obj.length : 0xf)).chr
+        result << binary_plist_obj(obj.length) if obj.length >= 15
+        res_keys = StringIO.new
+        res_values = StringIO.new
+        obj.each do |k, v|
+          res_keys << pack_int(k, ref_byte_size)
+          res_values << pack_int(v, ref_byte_size)
+        end
+        result << res_keys.string
+        result << res_values.string
+        result.string
       else
         return binary_plist_data(Marshal.dump(obj))
-      end
-    end
-    
-    def self.decode_binary_plist_obj(plist, offset, ref_byte_size)
-      case plist[offset]
-      when CFBinaryPlistMarkerASCIIString..(CFBinaryPlistMarkerASCIIString | 0xf)
-        length, offset = decode_length(plist, offset)
-        return plist[offset, length]
-      when CFBinaryPlistMarkerUnicode16String..(CFBinaryPlistMarkerUnicode16String | 0xf)
-        length, offset = decode_length(plist, offset)
-        codepoints = plist[offset, length * 2].unpack("n*")
-        str = ""
-        codepoints.each do |codepoint|
-          if codepoint <= 0x7f
-            ch = ' '
-            ch[0] = to_i
-          elsif codepoint <= 0x7ff
-            ch = '  '
-            ch[0] = ((codepoint & 0x7c0) >> 6) | 0xc0
-            ch[1] = codepoint & 0x3f | 0x80
-          else
-            ch = '   '
-            ch[0] = ((codepoint & 0xf000) >> 12) | 0xe0
-            ch[1] = ((codepoint & 0xfc0) >> 6) | 0x80
-            ch[2] = codepoint & 0x3f | 0x80
-          end
-          str << ch
-        end
-        return str
-      when CFBinaryPlistMarkerReal | 3
-        return plist[offset+1, 8].unpack("G").first
-      when CFBinaryPlistMarkerInt..(CFBinaryPlistMarkerInt | 0xf)
-        num_bytes = 2 ** (plist[offset] & 0xf)
-        return unpack_int(plist[offset+1, num_bytes])
-      when CFBinaryPlistMarkerTrue
-        return true
-      when CFBinaryPlistMarkerFalse
-        return false
-      when CFBinaryPlistMarkerDate
-        secs = plist[offset+1, 8].unpack("G").first + NSTimeIntervalSince1970
-        return Time.at(secs)
-      when CFBinaryPlistMarkerData..(CFBinaryPlistMarkerData | 0xf)
-        length, offset = decode_length(plist, offset)
-        return StringIO.new(plist[offset, length])
-      when CFBinaryPlistMarkerArray..(CFBinaryPlistMarkerArray | 0xf)
-        ary = []
-        length, offset = decode_length(plist, offset)
-        length.times do
-          ary << unpack_int(plist[offset, ref_byte_size])
-          offset += ref_byte_size
-        end
-        return ary
-      when CFBinaryPlistMarkerDict..(CFBinaryPlistMarkerDict | 0xf)
-        hsh = {}
-        keys = []
-        length, offset = decode_length(plist, offset)
-        length.times do
-          keys << unpack_int(plist[offset, ref_byte_size])
-          offset += ref_byte_size
-        end
-        length.times do |i|
-          hsh[keys[i]] = unpack_int(plist[offset, ref_byte_size])
-          offset += ref_byte_size
-        end
-        return hsh
       end
     end
     
@@ -420,68 +310,19 @@ module Plist
         raise(ArgumentError, "negative integers require 8 or 16 bytes of storage")
       end
       case num_bytes
-      when 1
+      when 1:
         [i].pack("c")
-      when 2
+      when 2:
         [i].pack("n")
-      when 4
+      when 4:
         [i].pack("N")
-      when 8
+      when 8:
         [(i >> 32) & 0xffffffff, i & 0xffffffff].pack("NN")
-      when 16
+      when 16:
         [i >> 96, (i >> 64) & 0xffffffff, (i >> 32) & 0xffffffff,
           i & 0xffffffff].pack("NNNN")
       else
         raise(ArgumentError, "num_bytes must be 1, 2, 4, 8, or 16")
-      end
-    end
-    
-    def self.combine_ints(num_bits, *ints)
-      i = ints.pop
-      shift_bits = num_bits
-      ints.reverse.each do |i_part|
-        i += i_part << shift_bits
-        shift_bits += num_bits
-      end
-      return i
-    end
-    
-    def self.offset_for_index(plist, table_addr, offset_byte_size, index)
-      offset = plist[table_addr + index * offset_byte_size, offset_byte_size]
-      unpack_int(offset)
-    end
-    
-    def self.unpack_int(s)
-      case s.length
-      when 1
-        s.unpack("C").first
-      when 2
-        s.unpack("n").first
-      when 4
-        s.unpack("N").first
-      when 8
-        i = combine_ints(32, *(s.unpack("NN")))
-        (i & 0x80000000_00000000 == 0) ?
-          i :
-          -(i ^ 0xffffffff_ffffffff) - 1
-      when 16
-        i = combine_ints(32, *(s.unpack("NNNN")))
-        (i & 0x80000000_00000000_00000000_00000000 == 0) ?
-          i :
-          -(i ^ 0xffffffff_ffffffff_ffffffff_ffffffff) - 1
-      else
-        raise(ArgumentError, "length must be 1, 2, 4, 8, or 16 bytes")
-      end
-    end
-    
-    def self.decode_length(plist, offset)
-      if plist[offset] & 0xf == 0xf
-        offset += 1
-        length = decode_binary_plist_obj(plist, offset, 0)
-        offset += min_byte_size(length) + 1
-        return length, offset
-      else
-        return (plist[offset] & 0xf), (offset + 1)
       end
     end
   end

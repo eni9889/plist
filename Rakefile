@@ -13,7 +13,6 @@ require 'rubygems'
 require 'rake'
 require 'rake/testtask'
 require 'rake/packagetask'
-require 'rake/contrib/rubyforgepublisher'
 require 'rdoc/task'
 require 'rubygems/package_task'
 
@@ -25,9 +24,6 @@ PKG_VERSION   = Plist::VERSION
 PKG_FILE_NAME = "#{PKG_NAME}-#{PKG_VERSION}"
 
 RELEASE_NAME  = "REL #{PKG_VERSION}"
-
-RUBYFORGE_PROJECT = "plist"
-RUBYFORGE_USER    = ENV['RUBYFORGE_USER']
 
 TEST_FILES    = Dir.glob('test/test_*').delete_if { |item| item.include?( "\.svn" ) }
 TEST_ASSETS   = Dir.glob('test/assets/*').delete_if { |item| item.include?( "\.svn" ) }
@@ -98,11 +94,6 @@ task :fix_whitespace => [ :clean ] do
   end
 end
 
-desc "Copy documentation to rubyforge"
-task :update_rdoc => [ :rdoc ] do
-  Rake::SshDirPublisher.new("#{RUBYFORGE_USER}@rubyforge.org", "/var/www/gforge-projects/#{RUBYFORGE_PROJECT}", "rdoc").upload
-end
-
 # Genereate the RDoc documentation
 RDoc::Task.new { |rdoc|
   rdoc.rdoc_dir = 'rdoc'
@@ -127,7 +118,6 @@ EOD
   s.authors  = "Ben Bleything and Patrick May"
   s.homepage = "http://plist.rubyforge.org"
 
-  s.rubyforge_project = RUBYFORGE_PROJECT
 
   s.has_rdoc = true
 

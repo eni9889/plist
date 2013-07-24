@@ -13,9 +13,9 @@ require 'rubygems'
 require 'rake'
 require 'rake/testtask'
 require 'rake/packagetask'
-require 'rake/gempackagetask'
 require 'rake/contrib/rubyforgepublisher'
 require 'rdoc/task'
+require 'rubygems/package_task'
 
 $:.unshift(File.dirname(__FILE__) + "/lib")
 require 'plist'
@@ -137,7 +137,7 @@ EOD
   s.autorequire = 'plist'
 end
 
-Rake::GemPackageTask.new(spec) do |p|
+Gem::PackageTask.new(spec) do |p|
   p.gem_spec = spec
   p.need_tar = true
   p.need_zip = true

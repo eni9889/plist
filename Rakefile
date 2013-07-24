@@ -19,7 +19,7 @@ require 'rubygems/package_task'
 $:.unshift(File.dirname(__FILE__) + "/lib")
 require 'plist'
 
-PKG_NAME      = 'plist'
+PKG_NAME      = 'sj-plist'
 PKG_VERSION   = Plist::VERSION
 PKG_FILE_NAME = "#{PKG_NAME}-#{PKG_VERSION}"
 

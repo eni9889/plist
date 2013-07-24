@@ -12,10 +12,10 @@ require 'fileutils'
 require 'rubygems'
 require 'rake'
 require 'rake/testtask'
-require 'rake/rdoctask'
 require 'rake/packagetask'
 require 'rake/gempackagetask'
 require 'rake/contrib/rubyforgepublisher'
+require 'rdoc/task'
 
 $:.unshift(File.dirname(__FILE__) + "/lib")
 require 'plist'
@@ -104,7 +104,7 @@ task :update_rdoc => [ :rdoc ] do
 end
 
 # Genereate the RDoc documentation
-Rake::RDocTask.new { |rdoc|
+RDoc::Task.new { |rdoc|
   rdoc.rdoc_dir = 'rdoc'
   rdoc.title    = "All-purpose Property List manipulation library"
   rdoc.options << '-SNmREADME'

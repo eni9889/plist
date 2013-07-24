@@ -1,16 +1,16 @@
 Gem::Specification.new do |s|
-  s.name    = "plist"
-  s.version = "3.1.7"
+  s.name    = "sj-plist"
+  s.version = "3.2"
 
-  s.summary     = "All-purpose Property List manipulation library."
+  s.summary     = "All-purpose Property List manipulation library (w/ binary support)."
   s.description = <<-EOD
 Plist is a library to manipulate Property List files, also known as plists.  It can parse plist files into native Ruby data structures as well as generating new plist files from your Ruby objects.
+
+  This fork includes support for binary plists.
 EOD
 
-  s.authors  = "Ben Bleything and Patrick May"
-  s.homepage = "http://plist.rubyforge.org"
-
-  s.rubyforge_project = "plist"
+  s.authors  = "Ben Bleything and Patrick May. Binary support merged by Sijmen Mulder."
+  s.homepage = "http://github.com/sjmulder/plist"
 
   s.has_rdoc = true
 

@@ -46,7 +46,7 @@ module Plist
     def self.dump(obj, envelope = true, format = :xml)
       case format
       when :xml
-        output = plist_node(obj)  
+        output = plist_node(obj)
         output = wrap(output) if envelope
       when :binary
         raise(ArgumentError, "binary plists must have an envelope") unless envelope
@@ -79,13 +79,13 @@ module Plist
       ">" => "&gt;",
       "<" => "&lt;"
     }
-    
+
     def self.escape_html(string)
       string.gsub(/(&|\"|>|<)/) do |mtch|
         HTML_ESCAPE_HASH[mtch]
       end
     end
-    
+
     def self.plist_node(element)
       output = StringIO.new
 
@@ -186,7 +186,7 @@ module Plist
         raise_indent_level
 
         append_indented_to_io(sio, block.call)
-        
+
         lower_indent_level
         append_indented_to_io(sio, "</#{type}>")
         out = sio.string
@@ -207,7 +207,7 @@ module Plist
       output << contents
 
       output << '</plist>' + "\n"
-      
+
       output.string
     end
 

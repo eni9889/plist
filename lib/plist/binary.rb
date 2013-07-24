@@ -42,7 +42,7 @@ module Plist
       ].pack("CCNNNNNN")
       plist.string
     end
-    
+
     def self.decode_binary_plist(plist)
       # Check header.
       unless plist[0, 6] == "bplist"
@@ -67,9 +67,9 @@ module Plist
       unflatten_collection(root_obj, [root_obj], plist, offset_table_addr,
         offset_byte_size, ref_byte_size)
     end
-    
+
   private
-    
+
     # These marker bytes are prefixed to objects in a binary property list to
     # indicate the type of the object.
     CFBinaryPlistMarkerNull = 0x00 # :nodoc:
@@ -86,11 +86,11 @@ module Plist
     CFBinaryPlistMarkerArray = 0xA0 # :nodoc:
     CFBinaryPlistMarkerSet = 0xC0 # :nodoc:
     CFBinaryPlistMarkerDict = 0xD0 # :nodoc:
-    
+
     # POSIX uses a reference time of 1970-01-01T00:00:00Z; Cocoa's reference
     # time is in 2001. This interval is for converting between the two.
     NSTimeIntervalSince1970 = 978307200.0 # :nodoc:
-    
+
     # Takes an object (nominally a collection, like an Array, Set, or Hash, but
     # any object is acceptable) and flattens it into a one-dimensional array.
     # Non-collection objects appear in the array as-is, but the contents of
@@ -154,7 +154,7 @@ module Plist
         return obj_list
       end
     end
-    
+
     def self.unflatten_collection(collection, obj_list, plist,
       offset_table_addr, offset_byte_size, ref_byte_size)
       case collection
@@ -196,7 +196,7 @@ module Plist
       end
       return collection
     end
-    
+
     # Returns a binary property list fragment that represents +obj+. The
     # returned string is not a complete property list, just a fragment that
     # describes +obj+, and is not useful without a header, offset table, and
@@ -296,7 +296,7 @@ module Plist
         return binary_plist_data(obj.read)
       when Array
         # Must be an array of object references as returned by flatten_collection.
-        result = StringIO.new        
+        result = StringIO.new
         result << (CFBinaryPlistMarkerArray | (obj.length < 15 ? obj.length : 0xf)).chr
         result << binary_plist_obj(obj.length) if obj.length >= 15
         obj.each do |i|
@@ -330,7 +330,7 @@ module Plist
         return binary_plist_data(Marshal.dump(obj))
       end
     end
-    
+
     def self.decode_binary_plist_obj(plist, offset, ref_byte_size)
       case plist[offset]
       when CFBinaryPlistMarkerASCIIString..(CFBinaryPlistMarkerASCIIString | 0xf)
@@ -395,7 +395,7 @@ module Plist
         return hsh
       end
     end
-    
+
     # Returns a binary property list fragment that represents a data object
     # with the contents of the string +data+. A Cocoa application would decode
     # this fragment as NSData. Like binary_plist_obj, the value returned by
@@ -408,7 +408,7 @@ module Plist
       result += data
       return result
     end
-    
+
     # Determines the minimum number of bytes that is a power of two and can
     # represent the integer +i+. Raises a RangeError if the number of bytes
     # exceeds 16. Note that the property list format considers integers of 1,
@@ -425,7 +425,7 @@ module Plist
         elsif i <= 0xffffffff
           return 4
         end
-      end      
+      end
       if i <= 0x7fffffffffffffff
         return 8
       elsif i <= 0x7fffffffffffffffffffffffffffffff
@@ -433,7 +433,7 @@ module Plist
       end
       raise(RangeError, "integer too big - exceeds 128 bits")
     end
-    
+
     # Packs an integer +i+ into its binary representation in the specified
     # number of bytes. Byte order is big-endian. Negative integers cannot be
     # stored in 1, 2, or 4 bytes.
@@ -457,7 +457,7 @@ module Plist
         raise(ArgumentError, "num_bytes must be 1, 2, 4, 8, or 16")
       end
     end
-    
+
     def self.combine_ints(num_bits, *ints)
       i = ints.pop
       shift_bits = num_bits
@@ -467,12 +467,12 @@ module Plist
       end
       return i
     end
-    
+
     def self.offset_for_index(plist, table_addr, offset_byte_size, index)
       offset = plist[table_addr + index * offset_byte_size, offset_byte_size]
       unpack_int(offset)
     end
-    
+
     def self.unpack_int(s)
       case s.length
       when 1
@@ -495,7 +495,7 @@ module Plist
         raise(ArgumentError, "length must be 1, 2, 4, 8, or 16 bytes")
       end
     end
-    
+
     def self.decode_length(plist, offset)
       if plist[offset] & 0xf == 0xf
         offset += 1

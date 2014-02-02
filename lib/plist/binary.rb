@@ -230,7 +230,7 @@ module Plist
         obj = obj.to_s if obj.is_a?(Symbol)
         # This doesn't really work. NKF's guess method is really, really bad
         # at discovering UTF8 when only a handful of characters are multi-byte.
-        encoding = NKF.guess2(obj) rescue guess(obj)
+        encoding = NKF.guess2(obj) rescue NKF.guess(obj)
         if encoding == NKF::ASCII && obj =~ /[\x80-\xff]/
           encoding = NKF::UTF8
         end

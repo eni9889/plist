@@ -1,3 +1,4 @@
+# encoding: US-ASCII
 require "date"
 require "nkf"
 require "set"

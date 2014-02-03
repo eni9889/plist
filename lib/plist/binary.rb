@@ -334,7 +334,7 @@ module Plist
     end
 
     def self.decode_binary_plist_obj(plist, offset, ref_byte_size)
-	  marker = plist[offset].unpack('C')
+	  marker = plist[offset].unpack('C')[0]
 	  pp ['plist', plist, 'offset', offset, 'ref_byte_size', ref_byte_size, "marker",marker ]
       case marker
       when CFBinaryPlistMarkerASCIIString..(CFBinaryPlistMarkerASCIIString | 0xf)

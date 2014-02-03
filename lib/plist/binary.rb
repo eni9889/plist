@@ -364,7 +364,7 @@ module Plist
       when CFBinaryPlistMarkerReal | 3
         return plist[offset+1, 8].unpack("G").first
       when CFBinaryPlistMarkerInt..(CFBinaryPlistMarkerInt | 0xf)
-        num_bytes = 2 ** (plist[offset] & 0xf)
+        num_bytes = 2 ** (plist[offset].unpack('C')[0] & 0xf)
         return unpack_int(plist[offset+1, num_bytes])
       when CFBinaryPlistMarkerTrue
         return true
@@ -508,13 +508,14 @@ module Plist
     end
 
     def self.decode_length(plist, offset)
-      if plist[offset] & 0xf == 0xf
+	  kher = plist[offset].unpack('C')[0]
+      if kher & 0xf == 0xf
         offset += 1
         length = decode_binary_plist_obj(plist, offset, 0)
         offset += min_byte_size(length) + 1
         return length, offset
       else
-        return (plist[offset] & 0xf), (offset + 1)
+        return (kher & 0xf), (offset + 1)
       end
     end
   end

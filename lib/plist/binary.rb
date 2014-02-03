@@ -400,11 +400,11 @@ module Plist
 	  when CFBinaryPlistMarkerUID..(CFBinaryPlistMarkerUID | 0xf)
 		# length, offset = decode_length(plist, offset)
 		length = (marker & 0x0f) + 1
-		result =  plist[offset, length]
+		result =  plist[offset+1, length].unpack('C*').inject(0) { |acc,e| acc*256+e }
 		# result =  unpack_int(plist[offset, ref_byte_size])
 		# offset += ref_byte_size
 		puts "WTF? result = '#{result}'(@#{offset},L=#{length})"
-		offset += length
+		offset += length+1
 		return result
 	  else
 		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]} at offset #{offset}"

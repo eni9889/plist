@@ -398,9 +398,11 @@ module Plist
         end
         return hsh
 	  when CFBinaryPlistMarkerUID..(CFBinaryPlistMarkerUID | 0xf)
-		result =  unpack_int(plist[offset, ref_byte_size])
-		offset += ref_byte_size
-		puts 'WTF?'
+		length, offset = decode_length(plist, offset)
+		result =  plist[offset, length]
+		# result =  unpack_int(plist[offset, ref_byte_size])
+		# offset += ref_byte_size
+		puts "WTF? result = '#{result}(#{offset})"
 		return result
 	  else
 		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]} at offset #{offset}"

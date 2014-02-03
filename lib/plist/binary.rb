@@ -6,6 +6,20 @@ require "stringio"
 require "pp"
 
 module Plist
+	
+  class CF_UID
+	attr_accessor :reference
+	def initialize given_reference, *rest
+		@reference = reference
+		@rest = rest
+	end
+	
+	def to_s
+		@reference.to_s
+	end
+	
+  end
+
   module Binary
     # Encodes +obj+ as a binary property list. If +obj+ is an Array, Hash, or
     # Set, the property list includes its contents.
@@ -405,7 +419,7 @@ module Plist
 		# offset += ref_byte_size
 		puts "WTF? result = '#{result}'(@#{offset},L=#{length})"
 		offset += length+1
-		return result
+		return CF_UID.new(result)
 	  else
 		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]} at offset #{offset}"
       end

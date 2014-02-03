@@ -3,6 +3,7 @@ require "date"
 require "nkf"
 require "set"
 require "stringio"
+require "pp"
 
 module Plist
   module Binary
@@ -394,6 +395,13 @@ module Plist
           offset += ref_byte_size
         end
         return hsh
+	  when CFBinaryPlistMarkerUID..(CFBinaryPlistMarkerUID | 0xf)
+		result =  unpack_int(plist[offset, ref_byte_size])
+		offset += ref_byte_size
+		puts 'WTF?'
+		return result
+	  else
+		raise Error, "Unknown Plist Marker Type #{plist[offset]}"
       end
     end
 

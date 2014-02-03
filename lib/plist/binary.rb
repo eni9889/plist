@@ -334,6 +334,7 @@ module Plist
     end
 
     def self.decode_binary_plist_obj(plist, offset, ref_byte_size)
+	  pp { plist: plist, offset: offset, ref_byte_size: ref_byte_size}
       case plist[offset]
       when CFBinaryPlistMarkerASCIIString..(CFBinaryPlistMarkerASCIIString | 0xf)
         length, offset = decode_length(plist, offset)
@@ -401,7 +402,7 @@ module Plist
 		puts 'WTF?'
 		return result
 	  else
-		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]}"
+		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]} at offset #{offset}"
       end
     end
 

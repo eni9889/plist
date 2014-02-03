@@ -402,7 +402,7 @@ module Plist
 		result =  plist[offset, length]
 		# result =  unpack_int(plist[offset, ref_byte_size])
 		# offset += ref_byte_size
-		puts "WTF? result = '#{result}(#{offset})"
+		puts "WTF? result = '#{result}'(@#{offset},L=#{length})"
 		return result
 	  else
 		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]} at offset #{offset}"

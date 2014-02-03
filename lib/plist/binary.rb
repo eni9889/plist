@@ -401,7 +401,7 @@ module Plist
 		puts 'WTF?'
 		return result
 	  else
-		raise Error, "Unknown Plist Marker Type #{plist[offset]}"
+		raise RuntimeError, "Unknown Plist Marker Type #{plist[offset]}"
       end
     end
 

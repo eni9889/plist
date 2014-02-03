@@ -334,7 +334,7 @@ module Plist
     end
 
     def self.decode_binary_plist_obj(plist, offset, ref_byte_size)
-	  pp ['plist', plist, 'offset', offset, 'ref_byte_size', ref_byte_size ]
+	  pp ['plist', plist, 'offset', offset, 'ref_byte_size', ref_byte_size, "plist[offset]", plist[offset].to_i ]
       case plist[offset]
       when CFBinaryPlistMarkerASCIIString..(CFBinaryPlistMarkerASCIIString | 0xf)
         length, offset = decode_length(plist, offset)

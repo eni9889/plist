@@ -10,12 +10,16 @@ module Plist
   class CF_UID
 	attr_accessor :reference
 	def initialize given_reference, *rest
-		@reference = reference
+		@reference = given_reference
 		@rest = rest
 	end
 	
 	def to_s
 		@reference.to_s
+	end
+	
+	def inspect
+		"CF_UID:#{@reference}"
 	end
 	
   end

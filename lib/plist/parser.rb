@@ -4,6 +4,9 @@
 #                                                            #
 # Distributed under the MIT license.                         #
 ##############################################################
+
+require "plist/ascii"
+
 #++
 # Plist parses Mac OS X xml property list files into ruby data structures.
 #
